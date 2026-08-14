@@ -3,75 +3,335 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meus Hinos</title>
-    <!-- Vincula o arquivo de manifesto do PWA -->
+    <title>Arpa Cristã</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2196F3">
     <style>
+        :root {
+            --bg-color: #f4f4f9;
+            --text-color: #333333;
+            --card-bg: #ffffff;
+            --primary-color: #2196F3;
+        }
+
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
-            background-color: #f4f4f9;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background 0.3s, color 0.3s;
         }
+
+        /* Topo e Menu Hamburguer */
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .menu-btn {
+            font-size: 24px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: white;
+        }
+
         h1 {
-            color: #333;
-            text-align: center;
+            margin: 0;
+            font-size: 20px;
         }
-        #lista-hinos {
+
+        /* Gaveta / Menu Lateral Suave */
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 998;
+        }
+
+        .drawer-overlay.open {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .drawer {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100%;
+            background: var(--card-bg);
+            color: var(--text-color);
+            box-shadow: 4px 0 10px rgba(0,0,0,0.2);
+            transition: left 0.3s ease;
+            z-index: 999;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .drawer.open {
+            left: 0;
+        }
+
+        .drawer h2 {
+            font-size: 18px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 8px;
+            margin-top: 0;
+        }
+
+        .config-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .config-group label {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .btn-control {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-control:active {
+            opacity: 0.8;
+        }
+
+        .color-themes {
+            display: flex;
+            gap: 10px;
+        }
+
+        .theme-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #ccc;
+            cursor: pointer;
+        }
+
+        /* Conteúdo Principal */
+        .container {
             max-width: 600px;
-            margin: 0 auto;
+            margin: 20px auto;
+            padding: 0 15px;
         }
+
+        .saudacao {
+            background: var(--card-bg);
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: center;
+            border-left: 5px solid var(--primary-color);
+        }
+
         .hino-card {
-            background: white;
+            background: var(--card-bg);
             padding: 15px;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hino-info {
+            font-size: var(--font-size, 16px);
+        }
+
+        .fav-btn {
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: #ccc;
+            transition: color 0.2s;
+        }
+
+        .fav-btn.favorito {
+            color: #e91e63;
         }
     </style>
 </head>
 <body>
 
-    <h1>Harpa Cristã</h1>
-    <div id="lista-hinos">Carregando hinos...</div>
+    <!-- Cabeçalho com o menu de 3 tracinhos -->
+    <header>
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        <h1>Arpa Cristã</h1>
+        <div style="width: 24px;"></div> <!-- Espaçador para centralizar o título -->
+    </header>
+
+    <!-- Fundo escuro ao abrir o menu -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="toggleMenu()"></div>
+
+    <!-- Gaveta Lateral de Configurações -->
+    <div class="drawer" id="drawer">
+        <h2>Configurações</h2>
+        
+        <div class="config-group">
+            <label>Tamanho da Letra</label>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-control" onclick="mudarFonte(2)">A+</button>
+                <button class="btn-control" onclick="mudarFonte(-2)">A-</button>
+            </div>
+        </div>
+
+        <div class="config-group">
+            <label>Cores Suaves (Temas)</label>
+            <div class="color-themes">
+                <div class="theme-circle" style="background-color: #f4f4f9;" onclick="mudarTema('#f4f4f9', '#333333', '#ffffff')" title="Padrão Claro"></div>
+                <div class="theme-circle" style="background-color: #fbf0d9;" onclick="mudarTema('#fbf0d9', '#5c4033', '#f4e4bc')" title="Papel Envelhecido"></div>
+                <div class="theme-circle" style="background-color: #1e1e1e; border-color: #444;" onclick="mudarTema('#121212', '#e0e0e0', '#1e1e1e')" title="Modo Escuro Suave"></div>
+                <div class="theme-circle" style="background-color: #e3f2fd;" onclick="mudarTema('#e3f2fd', '#0d47a1', '#bbdefb')" title="Azul Suave"></div>
+            </div>
+        </div>
+
+        <div class="config-group" style="margin-top: auto;">
+            <p style="font-size: 12px; text-align: center; color: #888;">Arpa Cristã PWA</p>
+        </div>
+    </div>
+
+    <!-- Conteúdo do Aplicativo -->
+    <div class="container">
+        <!-- Saudação solicitada -->
+        <div class="saudacao">Olá, a paz do Senhor!</div>
+
+        <div id="lista-hinos">Carregando hinos...</div>
+    </div>
 
     <script>
-        // Substitua pela URL raw real do arquivo JSON no repositório do GitHub
-        const urlJSON = 'https://raw.githubusercontent.com/DanielLiberato/NOME_DO_REPOSITORIO/main/harpa_crista_640_hinos.json';
+        let tamanhoFonteAtual = 16;
+        let favoritos = JSON.parse(localStorage.getItem('hinos_favoritos')) || [];
 
+        // Controle do Menu Lateral
+        function toggleMenu() {
+            const drawer = document.getElementById('drawer');
+            const overlay = document.getElementById('drawerOverlay');
+            drawer.classList.toggle('open');
+            overlay.classList.toggle('open');
+        }
+
+        // Mudar Tamanho da Fonte
+        function mudarFonte(delta) {
+            tamanhoFonteAtual += delta;
+            if (tamanhoFonteAtual < 12) tamanhoFonteAtual = 12;
+            if (tamanhoFonteAtual > 30) tamanhoFonteAtual = 30;
+            document.documentElement.style.setProperty('--font-size', tamanhoFonteAtual + 'px');
+            localStorage.setItem('tamanho_fonte', tamanhoFonteAtual);
+        }
+
+        // Mudar Temas de Cores
+        function mudarTema(bg, text, card) {
+            document.documentElement.style.setProperty('--bg-color', bg);
+            document.documentElement.style.setProperty('--text-color', text);
+            document.documentElement.style.setProperty('--card-bg', card);
+            localStorage.setItem('tema_bg', bg);
+            localStorage.setItem('tema_text', text);
+            localStorage.setItem('tema_card', card);
+        }
+
+        // Favoritar Hino
+        function toggleFavorito(numeroHino) {
+            const index = favoritos.indexOf(numeroHino);
+            if (index > -1) {
+                favoritos.splice(index, 1);
+            } else {
+                favoritos.push(numeroHino);
+            }
+            localStorage.setItem('hinos_favoritos', JSON.stringify(favoritos));
+            carregarHinosNaTela();
+        }
+
+        let listaHinosGlobal = [];
+
+        // Carregar Dados do JSON local
         async function carregarDados() {
             try {
-                const resposta = await fetch(urlJSON);
-                if (!resposta.ok) {
-                    throw new Error('Erro ao carregar o arquivo JSON.');
-                }
-                const hinos = await resposta.json();
-                
-                const container = document.getElementById('lista-hinos');
-                container.innerHTML = ''; 
-
-                hinos.forEach(hino => {
-                    const item = document.createElement('div');
-                    item.className = 'hino-card';
-                    item.innerHTML = `<strong>${hino.numero}</strong> - ${hino.titulo}`;
-                    container.appendChild(item);
-                });
-
+                const resposta = await fetch('./harpa_crista_640_hinos.json');
+                if (!resposta.ok) throw new Error('Erro ao carregar');
+                listaHinosGlobal = await resposta.json();
+                carregarHinosNaTela();
             } catch (erro) {
                 console.error('Erro:', erro);
-                document.getElementById('lista-hinos').innerText = 'Você está offline ou ocorreu um erro ao carregar os dados online. Verifique o cache.';
+                document.getElementById('lista-hinos').innerText = 'Você está offline ou ocorreu um erro ao carregar os dados. Verifique se o arquivo JSON está na raiz.';
             }
         }
 
-        carregarDados();
+        function carregarHinosNaTela() {
+            const container = document.getElementById('lista-hinos');
+            container.innerHTML = ''; 
 
-        // Registra o Service Worker para habilitar o funcionamento offline
+            listaHinosGlobal.forEach(hino => {
+                const ehFavorito = favoritos.includes(hino.numero);
+                
+                const item = document.createElement('div');
+                item.className = 'hino-card';
+                item.innerHTML = `
+                    <div class="hino-info"><strong>${hino.numero}</strong> - ${hino.titulo}</div>
+                    <button class="fav-btn ${ehFavorito ? 'favorito' : ''}" onclick="toggleFavorito(${hino.numero})">♥</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // Carregar preferências salvas do usuário (se houver)
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedFont = localStorage.getItem('tamanho_fonte');
+            if (savedFont) {
+                tamanhoFonteAtual = parseInt(savedFont);
+                document.documentElement.style.setProperty('--font-size', tamanhoFonteAtual + 'px');
+            }
+
+            const savedBg = localStorage.getItem('tema_bg');
+            if (savedBg) {
+                mudarTema(
+                    localStorage.getItem('tema_bg'),
+                    localStorage.getItem('tema_text'),
+                    localStorage.getItem('tema_card')
+                );
+            }
+
+            carregarDados();
+        });
+
+        // Registrar o Service Worker para o modo Offline / PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker registrado com sucesso!'))
-                    .catch(err => console.log('Falha ao registrar o Service Worker:', err));
+                    .then(reg => console.log('Service Worker registrado!'))
+                    .catch(err => console.log('Erro no Service Worker:', err));
             });
         }
     </script>

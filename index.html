@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus Hinos</title>
+    <!-- Vincula o arquivo de manifesto do PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2196F3">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        #lista-hinos {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .hino-card {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Arpa Cristã</h1>
+    <div id="lista-hinos">Carregando hinos...</div>
+
+    <script>
+        // Substitua pela URL raw real do arquivo JSON no repositório do GitHub
+        const urlJSON = 'https://raw.githubusercontent.com/DanielLiberato/NOME_DO_REPOSITORIO/main/harpa_crista_640_hinos.json';
+
+        async function carregarDados() {
+            try {
+                const resposta = await fetch(urlJSON);
+                if (!resposta.ok) {
+                    throw new Error('Erro ao carregar o arquivo JSON.');
+                }
+                const hinos = await resposta.json();
+                
+                const container = document.getElementById('lista-hinos');
+                container.innerHTML = ''; 
+
+                hinos.forEach(hino => {
+                    const item = document.createElement('div');
+                    item.className = 'hino-card';
+                    item.innerHTML = `<strong>${hino.numero}</strong> - ${hino.titulo}`;
+                    container.appendChild(item);
+                });
+
+            } catch (erro) {
+                console.error('Erro:', erro);
+                document.getElementById('lista-hinos').innerText = 'Você está offline ou ocorreu um erro ao carregar os dados online. Verifique o cache.';
+            }
+        }
+
+        carregarDados();
+
+        // Registra o Service Worker para habilitar o funcionamento offline
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registrado com sucesso!'))
+                    .catch(err => console.log('Falha ao registrar o Service Worker:', err));
+            });
+        }
+    </script>
+
+</body>
+</html>

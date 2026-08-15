@@ -219,7 +219,7 @@
         </div>
 
         <div class="config-group" style="margin-top: auto;">
-            <p style="font-size: 12px; text-align: center; color: #888;">Arpa Cristã PWA</p>
+            <p style="font-size: 12px; text-align: center; color: #888;">harpa Cristã PWA</p>
         </div>
     </div>
 
@@ -279,7 +279,7 @@
         // Carregar Dados do JSON local
         async function carregarDados() {
             try {
-                const resposta = await fetch('./harpa_crista_640_hinos.json');
+                const resposta = await fetch('../harpa_crista_640_hinos.json');
                 if (!resposta.ok) throw new Error('Erro ao carregar');
                 listaHinosGlobal = await resposta.json();
                 carregarHinosNaTela();

@@ -190,7 +190,7 @@
     <header>
         <button class="menu-btn" onclick="toggleMenu()">☰</button>
         <h1>Arpa Cristã</h1>
-        <div style="width: 24px;"></div> <!-- Espaçador para centralizar o título -->
+        <div style="width: 24px;"></div>
     </header>
 
     <!-- Fundo escuro ao abrir o menu -->
@@ -225,9 +225,7 @@
 
     <!-- Conteúdo do Aplicativo -->
     <div class="container">
-        <!-- Saudação solicitada -->
         <div class="saudacao">Olá, a paz do Senhor!</div>
-
         <div id="lista-hinos">Carregando hinos...</div>
     </div>
 
@@ -235,7 +233,6 @@
         let tamanhoFonteAtual = 16;
         let favoritos = JSON.parse(localStorage.getItem('hinos_favoritos')) || [];
 
-        // Controle do Menu Lateral
         function toggleMenu() {
             const drawer = document.getElementById('drawer');
             const overlay = document.getElementById('drawerOverlay');
@@ -243,7 +240,6 @@
             overlay.classList.toggle('open');
         }
 
-        // Mudar Tamanho da Fonte
         function mudarFonte(delta) {
             tamanhoFonteAtual += delta;
             if (tamanhoFonteAtual < 12) tamanhoFonteAtual = 12;
@@ -252,7 +248,6 @@
             localStorage.setItem('tamanho_fonte', tamanhoFonteAtual);
         }
 
-        // Mudar Temas de Cores
         function mudarTema(bg, text, card) {
             document.documentElement.style.setProperty('--bg-color', bg);
             document.documentElement.style.setProperty('--text-color', text);
@@ -262,7 +257,6 @@
             localStorage.setItem('tema_card', card);
         }
 
-        // Favoritar Hino
         function toggleFavorito(numeroHino) {
             const index = favoritos.indexOf(numeroHino);
             if (index > -1) {
@@ -276,16 +270,29 @@
 
         let listaHinosGlobal = [];
 
-        // Carregar Dados do JSON local
+        // Carregar Dados do arquivo TXT local
         async function carregarDados() {
             try {
-                const resposta = await fetch('./harpa_crista_640_hinos.json');
+                const resposta = await fetch('./harpa_crista_640_hinos.txt');
                 if (!resposta.ok) throw new Error('Erro ao carregar');
-                listaHinosGlobal = await resposta.json();
+                
+                const texto = await resposta.text();
+                
+                // Se o seu TXT for um JSON renomeado, tentamos ler como JSON:
+                try {
+                    listaHinosGlobal = JSON.parse(texto);
+                } catch (e) {
+                    // Se for um texto puro (uma linha por hino), tratamos linha por linha
+                    const linhas = texto.split('\n').filter(l => l.trim() !== '');
+                    listaHinosGlobal = linhas.map((linha, index) => {
+                        return { numero: index + 1, titulo: linha };
+                    });
+                }
+
                 carregarHinosNaTela();
             } catch (erro) {
                 console.error('Erro:', erro);
-                document.getElementById('lista-hinos').innerText = 'Você está offline ou ocorreu um erro ao carregar os dados. Verifique se o arquivo JSON está na raiz.';
+                document.getElementById('lista-hinos').innerText = 'Você está offline ou ocorreu um erro ao carregar os dados. Verifique se o arquivo TXT está na raiz.';
             }
         }
 
@@ -306,11 +313,35 @@
             });
         }
 
-        // Carregar preferências salvas do usuário (se houver)
         window.addEventListener('DOMContentLoaded', () => {
             const savedFont = localStorage.getItem('tamanho_fonte');
             if (savedFont) {
                 tamanhoFonteAtual = parseInt(savedFont);
+                document.documentElement.style.setProperty('--font-size', tamanhoFonteAtual + 'px');
+            }
+
+            const savedBg = localStorage.getItem('tema_bg');
+            if (savedBg) {
+                mudarTema(
+                    localStorage.getItem('tema_bg'),
+                    localStorage.getItem('tema_text'),
+                    localStorage.getItem('tema_card')
+                );
+            }
+
+            carregarDados();
+        });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .catch(err => console.log('Erro no Service Worker:', err));
+            });
+        }
+    </script>
+
+</body>
+</html>              tamanhoFonteAtual = parseInt(savedFont);
                 document.documentElement.style.setProperty('--font-size', tamanhoFonteAtual + 'px');
             }
 

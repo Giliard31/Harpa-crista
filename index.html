@@ -279,7 +279,7 @@
         // Carregar Dados do JSON local
         async function carregarDados() {
             try {
-                const resposta = await fetch('./harpa_crista_640_hinos.json');
+                const resposta = await fetch('harpa_crista_640_hinos.json');
                 if (!resposta.ok) throw new Error('Erro ao carregar');
                 listaHinosGlobal = await resposta.json();
                 carregarHinosNaTela();

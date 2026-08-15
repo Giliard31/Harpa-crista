@@ -48,6 +48,31 @@
         h1 {
             margin: 0;
             font-size: 20px;
+            cursor: pointer;
+        }
+
+        /* Barra de Pesquisa */
+        .search-container {
+            max-width: 600px;
+            margin: 15px auto 5px auto;
+            padding: 0 15px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-color);
         }
 
         /* Gaveta / Menu Lateral Suave */
@@ -140,7 +165,7 @@
         /* Conteúdo Principal */
         .container {
             max-width: 600px;
-            margin: 20px auto;
+            margin: 15px auto;
             padding: 0 15px;
         }
 
@@ -158,45 +183,81 @@
         .hino-card {
             background: var(--card-bg);
             padding: 15px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .hino-card:active {
+            transform: scale(0.99);
         }
 
         .hino-info {
             font-size: var(--font-size, 16px);
+            flex-grow: 1;
         }
 
         .fav-btn {
             background: none;
             border: none;
-            font-size: 22px;
+            font-size: 24px;
             cursor: pointer;
             color: #ccc;
+            padding: 0 5px;
             transition: color 0.2s;
         }
 
         .fav-btn.favorito {
             color: #e91e63;
         }
+
+        /* Visualização do Hino Completo */
+        .hino-detalhe {
+            display: none;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            margin-top: 10px;
+        }
+
+        .hino-detalhe.ativo {
+            display: block;
+        }
+
+        .btn-voltar {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .letra-conteudo {
+            font-size: var(--font-size, 16px);
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Cabeçalho com o menu de 3 tracinhos -->
     <header>
         <button class="menu-btn" onclick="toggleMenu()">☰</button>
-        <h1>Arpa Cristã</h1>
+        <h1 onclick="voltarParaLista()">Arpa Cristã</h1>
         <div style="width: 24px;"></div>
     </header>
 
-    <!-- Fundo escuro ao abrir o menu -->
     <div class="drawer-overlay" id="drawerOverlay" onclick="toggleMenu()"></div>
 
-    <!-- Gaveta Lateral de Configurações -->
     <div class="drawer" id="drawer">
         <h2>Configurações</h2>
         
@@ -223,27 +284,36 @@
         </div>
     </div>
 
-    <!-- Conteúdo do Aplicativo -->
+    <div class="search-container" id="searchContainer">
+        <input type="text" id="searchInput" class="search-input" placeholder="Pesquisar por número ou trecho..." oninput="filtrarHinos()">
+    </div>
+
     <div class="container">
-        <div class="saudacao">Olá, a paz do Senhor!</div>
+        <div class="saudacao" id="saudacaoBox">Olá, a paz do Senhor!</div>
+
         <div id="lista-hinos">Carregando hinos...</div>
+
+        <div id="hinoDetalhe" class="hino-detalhe">
+            <button class="btn-voltar" onclick="voltarParaLista()">← Voltar à Lista</button>
+            <h2 id="detalheTitulo" style="margin-top: 0; color: var(--primary-color);"></h2>
+            <div id="detalheLetra" class="letra-conteudo"></div>
+        </div>
     </div>
 
     <script>
         let tamanhoFonteAtual = 16;
         let favoritos = JSON.parse(localStorage.getItem('hinos_favoritos')) || [];
+        let listaHinosGlobal = [];
 
         function toggleMenu() {
-            const drawer = document.getElementById('drawer');
-            const overlay = document.getElementById('drawerOverlay');
-            drawer.classList.toggle('open');
-            overlay.classList.toggle('open');
+            document.getElementById('drawer').classList.toggle('open');
+            document.getElementById('drawerOverlay').classList.toggle('open');
         }
 
         function mudarFonte(delta) {
             tamanhoFonteAtual += delta;
             if (tamanhoFonteAtual < 12) tamanhoFonteAtual = 12;
-            if (tamanhoFonteAtual > 30) tamanhoFonteAtual = 30;
+            if (tamanhoFonteAtual > 32) tamanhoFonteAtual = 32;
             document.documentElement.style.setProperty('--font-size', tamanhoFonteAtual + 'px');
             localStorage.setItem('tamanho_fonte', tamanhoFonteAtual);
         }
@@ -257,7 +327,8 @@
             localStorage.setItem('tema_card', card);
         }
 
-        function toggleFavorito(numeroHino) {
+        function toggleFavorito(event, numeroHino) {
+            event.stopPropagation();
             const index = favoritos.indexOf(numeroHino);
             if (index > -1) {
                 favoritos.splice(index, 1);
@@ -265,12 +336,9 @@
                 favoritos.push(numeroHino);
             }
             localStorage.setItem('hinos_favoritos', JSON.stringify(favoritos));
-            carregarHinosNaTela();
+            filtrarHinos();
         }
 
-        let listaHinosGlobal = [];
-
-        // Carregar Dados do arquivo TXT local
         async function carregarDados() {
             try {
                 const resposta = await fetch('./harpa_crista_640_hinos.txt');
@@ -278,36 +346,107 @@
                 
                 const texto = await resposta.text();
                 
-                // Se o seu TXT for um JSON renomeado, tentamos ler como JSON:
                 try {
                     listaHinosGlobal = JSON.parse(texto);
                 } catch (e) {
-                    // Se for um texto puro (uma linha por hino), tratamos linha por linha
                     const linhas = texto.split('\n').filter(l => l.trim() !== '');
                     listaHinosGlobal = linhas.map((linha, index) => {
-                        return { numero: index + 1, titulo: linha };
+                        return { numero: index + 1, titulo: linha, letra: linha };
                     });
                 }
 
-                carregarHinosNaTela();
+                renderizarHinos(listaHinosGlobal);
             } catch (erro) {
                 console.error('Erro:', erro);
                 document.getElementById('lista-hinos').innerText = 'Você está offline ou ocorreu um erro ao carregar os dados. Verifique se o arquivo TXT está na raiz.';
             }
         }
 
-        function carregarHinosNaTela() {
+        function renderizarHinos(hinos) {
             const container = document.getElementById('lista-hinos');
             container.innerHTML = ''; 
 
-            listaHinosGlobal.forEach(hino => {
+            if (hinos.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #888;">Nenhum hino encontrado.</p>';
+                return;
+            }
+
+            hinos.forEach(hino => {
                 const ehFavorito = favoritos.includes(hino.numero);
                 
                 const item = document.createElement('div');
                 item.className = 'hino-card';
+                item.onclick = () => abrirHino(hino);
                 item.innerHTML = `
                     <div class="hino-info"><strong>${hino.numero}</strong> - ${hino.titulo}</div>
-                    <button class="fav-btn ${ehFavorito ? 'favorito' : ''}" onclick="toggleFavorito(${hino.numero})">♥</button>
+                    <button class="fav-btn ${ehFavorito ? 'favorito' : ''}" onclick="toggleFavorito(event, ${hino.numero})">♥</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function filtrarHinos() {
+            const termo = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            const filtrados = listaHinosGlobal.filter(hino => {
+                const numStr = hino.numero.toString();
+                const tituloStr = hino.titulo ? hino.titulo.toLowerCase() : '';
+                const letraStr = hino.letra ? hino.letra.toLowerCase() : '';
+                
+                return numStr.includes(termo) || tituloStr.includes(termo) || letraStr.includes(termo);
+            });
+
+            renderizarHinos(filtrados);
+        }
+
+        function abrirHino(hino) {
+            document.getElementById('searchContainer').style.display = 'none';
+            document.getElementById('saudacaoBox').style.display = 'none';
+            document.getElementById('lista-hinos').style.display = 'none';
+
+            document.getElementById('detalheTitulo').innerText = `${hino.numero} - ${hino.titulo}`;
+            document.getElementById('detalheLetra').innerText = hino.letra || hino.titulo;
+            
+            document.getElementById('hinoDetalhe').classList.add('ativo');
+            window.scrollTo(0, 0);
+        }
+
+        function voltarParaLista() {
+            document.getElementById('hinoDetalhe').classList.remove('ativo');
+            document.getElementById('searchContainer').style.display = 'block';
+            document.getElementById('saudacaoBox').style.display = 'block';
+            document.getElementById('lista-hinos').style.display = 'block';
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedFont = localStorage.getItem('tamanho_fonte');
+            if (savedFont) {
+                tamanhoFonteAtual = parseInt(savedFont);
+                document.documentElement.style.setProperty('--font-size', tamanhoFonteAtual + 'px');
+            }
+
+            const savedBg = localStorage.getItem('tema_bg');
+            if (savedBg) {
+                mudarTema(
+                    localStorage.getItem('tema_bg'),
+                    localStorage.getItem('tema_text'),
+                    localStorage.getItem('tema_card')
+                );
+            }
+
+            carregarDados();
+        });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .catch(err => console.log('Erro no Service Worker:', err));
+            });
+        }
+    </script>
+
+</body>
+</html>" onclick="toggleFavorito(${hino.numero})">♥</button>
                 `;
                 container.appendChild(item);
             });
